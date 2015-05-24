@@ -23,6 +23,9 @@
 //################################################################################
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,31 +38,7 @@ import de.raida.jcadlib.cadimport.jt.JTImporter;
  * Test class for the JT importer.
  */
 public class FcJtPlugin {
-	/**
-	 * Test export.
-	 * @param jtImporter    Instance of the JT importer
-	 * @param testDirectory Base directory with the JT files
-	 */
-	private void testImport(JTImporter jtImporter, String testDirectory){
-		File sourceDirectory = new File(testDirectory);
 
-		for(String fileName : sourceDirectory.list()){
-			try {
-				// Load the JT file
-				System.out.println("\nLoading: " + fileName);
-				jtImporter.loadFile(new File(sourceDirectory + File.separator + fileName).toURI().toURL());
-
-				// Print all available information
-				//printInformation(jtImporter);
-				
-				// write the cash files
-				writeCashFile(jtImporter,sourceDirectory);
-
-			} catch(Exception exception){
-				exception.printStackTrace();
-			}
-		}
-	}
 	
 	private void writeCashFile(JTImporter jtImporter,File directory ) throws Exception {
 		
@@ -181,6 +160,98 @@ public class FcJtPlugin {
 			writer.close();
 			
 			os.close();
+		}
+		
+	
+	}
+	
+	private void writeSTL(JTImporter jtImporter,File directory ) throws Exception {
+		
+		System.out.println("-----Write mesh cash files ---------------------------------------------");
+
+		HashMap<String, ArrayList<Object[]>> faceEntities = jtImporter.getFaces();
+		System.out.println(" ... # layers with faces: " + faceEntities.size());
+		for(Iterator<String> iterator = faceEntities.keySet().iterator(); iterator.hasNext();){
+			String layerName = iterator.next();
+			System.out.println("     ... layer: " + layerName);
+			ArrayList<Object[]> faces = faceEntities.get(layerName);
+			System.out.println("         ... # entities: " + faces.size());
+
+			layerName = layerName.replace(":","_");
+			layerName = layerName.replace(";","_");
+			layerName = layerName.replace(",","_");
+			layerName = layerName.replace(" ","-");
+		
+			File file = new File(directory + File.separator + layerName  +".stl");
+			System.out.println("FileName: " + file);
+				
+			file.createNewFile();
+			PrintWriter writer = new PrintWriter(file, "UTF-8");
+				
+			writer.println(" solid test ");
+
+			int n = 1;
+			int CntVerts=0;
+			int CntIdx=0;
+			int CntColor=0;
+			int CntNorm=0;
+			
+			for(Object[] faceList : faces){
+				
+				double[] vertices = (double[])faceList[0];
+				int[] indices = (int[])faceList[1];
+				double[] colors = (double[])faceList[2];
+				double[] normals = (double[])faceList[3];
+				
+				CntVerts += vertices.length;
+				CntIdx += indices.length ;
+				CntColor += colors.length;
+				CntNorm += normals.length ;
+
+			}
+			
+	
+			System.out.println("             ... OverAllVert: "  + CntVerts + " Indx: " + CntIdx + " Color: " + CntColor + " Norm: " + CntNorm);
+
+			for(Object[] faceList : faces){
+					
+				// Write STL files ========================================================================
+					
+				double[] vertices = (double[])faceList[0];
+				int[] indices = (int[])faceList[1];
+				double[] colors = (double[])faceList[2];
+				double[] normals = (double[])faceList[3];
+				
+				if(n==1){
+					System.out.println("             ... [entity 1] vertices: " + vertices.length + " => (showing 1) [" + vertices[0] + ", " + vertices[1] + ", " + vertices[2] + "]");
+					System.out.println("             ... [entity 1] indices: " + indices.length + " => (showing 3) [" + indices[0] + ", " + indices[1] + ", " + indices[2] + "]");
+					System.out.println("             ... [entity 1] colors: " + colors.length + " => (showing 1) [" + colors[0] + ", " + colors[1] + ", " + colors[2] + "]");
+					System.out.println("             ... [entity 1] normals: " + normals.length + " => (showing 1) [" + normals[0] + ", " + normals[1] + ", " + normals[2] + "]");
+				}
+				for( int l= 0; l<indices.length; l=l+3) {
+					
+					int i;
+					i = indices[l] * 3;
+					writer.println("  facet normal " + normals[i] + " " + normals[i+1] + " " + normals[i+2] );
+					
+					writer.println("  outer loop "); 
+					writer.println("     vertex " + vertices[i] + " " + vertices[i+1] + " " + vertices[i+2] );
+					i = indices[l+1] * 3;
+					writer.println("     vertex " + vertices[i] + " " + vertices[i+1] + " " + vertices[i+2] );
+					i = indices[l+2] * 3;
+					writer.println("     vertex " + vertices[i] + " " + vertices[i+1] + " " + vertices[i+2] );
+					
+					writer.println("   endloop "); 
+					writer.println(" endfacet "); 
+					
+				}
+				
+			
+			}
+			
+			writer.println("endsolid test ");
+			writer.close();
+
 		}
 		
 	
@@ -317,7 +388,7 @@ public class FcJtPlugin {
 	}*/
 	
 	public static void main(String[] arguments){
-		if(arguments.length == 1)
+		if(arguments.length == 2)
 		{
 			try {
 				FcJtPlugin importPlugin = new FcJtPlugin();
@@ -332,6 +403,18 @@ public class FcJtPlugin {
 				
 				//importPlugin.writeCashFile(jtImporter,new File("D:\\temp"));
 				
+				Path outFolder = Paths.get(arguments[1]);
+				
+				if (Files.notExists(outFolder)) {
+					boolean success = (new File(arguments[1])).mkdirs();
+					if (!success) {
+						throw new IllegalArgumentException("Cannot create output dir");
+					}
+				 
+				}
+				// write the STL to the output dir
+				importPlugin.writeSTL(jtImporter,new File(arguments[1]));
+				
 			} catch(Exception exception){
 				exception.printStackTrace();
 			}
@@ -339,7 +422,7 @@ public class FcJtPlugin {
 		}
 		else
 		{
-			System.out.println("Wrong parameters");
+			System.out.println("Wrong parameters: use JtFile OutDir");
 		}
 	}
 }
