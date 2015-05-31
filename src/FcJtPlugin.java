@@ -439,17 +439,17 @@ public class FcJtPlugin {
 					System.out.println("             ... [entity 1] normals: " + normals.length + " => (showing 1) [" + normals[0] + ", " + normals[1] + ", " + normals[2] + "]");
 				}
 				
-				System.out.println(":VC:" + vertices.length);
-				for( int l= 0; l<vertices.length; l=l+1) {
-					System.out.println(":V:" + vertices[l]);
+				System.out.println(":VC:" + vertices.length/3);
+				for( int l= 0; l<vertices.length; l=l+3) {
+					System.out.println(":V:" + vertices[l] + ";" + vertices[l+1] + ";" + vertices[l+2] );
 				}
-				System.out.println(":CC:" + colors.length);
-				for( int l= 0; l<colors.length; l=l+1) {
-					System.out.println(":C:" + colors[l]);
+				System.out.println(":CC:" + colors.length/3);
+				for( int l= 0; l<colors.length; l=l+3) {
+					System.out.println(":C:" + colors[l]+ ";"+ colors[l+1]+ ";"+ colors[l+2]);
 				}
-				System.out.println(":NC:" + normals.length);
-				for( int l= 0; l<normals.length; l=l+1) {
-					System.out.println(":N:" + normals[l]);
+				System.out.println(":NC:" + normals.length/3);
+				for( int l= 0; l<normals.length; l=l+3) {
+					System.out.println(":N:" + normals[l]+ ";"+ normals[l+1]+ ";"+ normals[l+2]);
 				}
 				
 				System.out.println(":IC:" + indices.length);
