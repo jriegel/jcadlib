@@ -251,6 +251,8 @@ public class FcJtPlugin {
 			
 			writer.println("endsolid test ");
 			writer.close();
+			System.out.println(":STL-File:" + file) ;
+
 
 		}
 		
@@ -377,7 +379,94 @@ public class FcJtPlugin {
 			}
 		}
 	}
+	/**
+	 * Writes the mesh to StdOUt
+	 * @param  jtImporter JT importer
+	 * @throws Exception  Thrown when something happens
+	 */
 
+	private void writeToStdOut(JTImporter jtImporter ) throws Exception {
+		
+		System.out.println("-----Write mesh to STd out ---------------------------------------------");
+
+		HashMap<String, ArrayList<Object[]>> faceEntities = jtImporter.getFaces();
+		System.out.println(" ... # layers with faces: " + faceEntities.size());
+		for(Iterator<String> iterator = faceEntities.keySet().iterator(); iterator.hasNext();){
+			String layerName = iterator.next();
+			System.out.println("     ... layer: " + layerName);
+			ArrayList<Object[]> faces = faceEntities.get(layerName);
+			System.out.println("         ... # entities: " + faces.size());
+
+
+			int n = 1;
+			int CntVerts=0;
+			int CntIdx=0;
+			int CntColor=0;
+			int CntNorm=0;
+			
+			for(Object[] faceList : faces){
+				
+				double[] vertices = (double[])faceList[0];
+				int[] indices = (int[])faceList[1];
+				double[] colors = (double[])faceList[2];
+				double[] normals = (double[])faceList[3];
+				
+				CntVerts += vertices.length;
+				CntIdx += indices.length ;
+				CntColor += colors.length;
+				CntNorm += normals.length ;
+
+			}
+			
+	
+			System.out.println("             ... OverAllVert: "  + CntVerts + " Indx: " + CntIdx + " Color: " + CntColor + " Norm: " + CntNorm);
+
+			for(Object[] faceList : faces){
+					
+				// Write STL files ========================================================================
+					
+				double[] vertices = (double[])faceList[0];
+				int[] indices = (int[])faceList[1];
+				double[] colors = (double[])faceList[2];
+				double[] normals = (double[])faceList[3];
+				
+				System.out.println(":F:" + layerName);
+				
+				if(n==1){
+					System.out.println("             ... [entity 1] vertices: " + vertices.length + " => (showing 1) [" + vertices[0] + ", " + vertices[1] + ", " + vertices[2] + "]");
+					System.out.println("             ... [entity 1] indices: " + indices.length + " => (showing 3) [" + indices[0] + ", " + indices[1] + ", " + indices[2] + "]");
+					System.out.println("             ... [entity 1] colors: " + colors.length + " => (showing 1) [" + colors[0] + ", " + colors[1] + ", " + colors[2] + "]");
+					System.out.println("             ... [entity 1] normals: " + normals.length + " => (showing 1) [" + normals[0] + ", " + normals[1] + ", " + normals[2] + "]");
+				}
+				
+				System.out.println(":VC:" + vertices.length);
+				for( int l= 0; l<vertices.length; l=l+1) {
+					System.out.println(":V:" + vertices[l]);
+				}
+				System.out.println(":CC:" + colors.length);
+				for( int l= 0; l<colors.length; l=l+1) {
+					System.out.println(":C:" + colors[l]);
+				}
+				System.out.println(":NC:" + normals.length);
+				for( int l= 0; l<normals.length; l=l+1) {
+					System.out.println(":N:" + normals[l]);
+				}
+				
+				System.out.println(":IC:" + indices.length);
+				for( int l= 0; l<indices.length; l=l+1) {
+					System.out.println(":I:" + indices[l]);
+				}
+				
+				
+				
+			
+			}
+			
+
+
+		}
+	}
+	
 	/**
 	 * Main entry point.
 	 * @param arguments Arguments of the command line
@@ -388,7 +477,7 @@ public class FcJtPlugin {
 	}*/
 	
 	public static void main(String[] arguments){
-		if(arguments.length == 2)
+		if(arguments.length == 1)
 		{
 			try {
 				FcJtPlugin importPlugin = new FcJtPlugin();
@@ -403,17 +492,20 @@ public class FcJtPlugin {
 				
 				//importPlugin.writeCashFile(jtImporter,new File("D:\\temp"));
 				
-				Path outFolder = Paths.get(arguments[1]);
+				//Path outFolder = Paths.get(arguments[1]);
 				
-				if (Files.notExists(outFolder)) {
+				/*if (Files.notExists(outFolder)) {
 					boolean success = (new File(arguments[1])).mkdirs();
 					if (!success) {
 						throw new IllegalArgumentException("Cannot create output dir");
 					}
 				 
-				}
+				}*/
 				// write the STL to the output dir
-				importPlugin.writeSTL(jtImporter,new File(arguments[1]));
+				//importPlugin.writeSTL(jtImporter,new File(arguments[1]));
+				
+				// write to StdOut
+				importPlugin.writeToStdOut(jtImporter);
 				
 			} catch(Exception exception){
 				exception.printStackTrace();
